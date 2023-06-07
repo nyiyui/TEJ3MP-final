@@ -11,29 +11,8 @@ struct upd {
   int time;
 };
 
-
 #define SCHEDULE_END 12000
 struct upd updates[] {
-
-  // // {true,  2, 0},
-  // // {true,  3, 0},
-  // // {true,  4, 0},
-  // {true,  5, 0},
-  // {true,  6, 1000},
-  // {true,  7, 2000},
-  // // {true,  8, 0},
-  // // {true,  9, 0},
-  // // {false, 2, 1000},
-  // // {false, 3, 1000},
-  // // {false, 4, 1000},
-  // {false, 5, 3000},
-  // {false, 6, 4000},
-  // {false, 7, 5000},
-  // // {false, 8, 1000},
-  // // {false, 9, 1000},
-
-
-  // {true,  2, 0},
   {false, 5, 0},
   {true,  7, 0},
   {true,  8, 0}, // people
@@ -61,6 +40,7 @@ struct upd updates[] {
 
 #define interval 100
 
+// get new state for button press?
 int getButtonVal(int time) {
   if (time <= 4000) return 3;
   if (time <= 5500) return 2;
@@ -69,28 +49,29 @@ int getButtonVal(int time) {
 
 Servo servo;
 bool button;
-int curr;
+int curr; // current state?
 int prev, now, accel;
 int servoTime;
 
 void setup()
 {
   Serial.begin(9600);
-  // pinMode(SERVO_PIN, INPUT);
+  // === Streetlight
   pinMode(LED_PIN, OUTPUT);
   pinMode(LDR_PIN, INPUT_PULLUP);
+  // === Buttons
   pinMode(BUTTON_PIN, INPUT);
+  // === Traffic Lights
   for (int i = 0; i < sizeof(updates)/sizeof(upd); i++)
 	pinMode(updates[i].pin, OUTPUT);
-  // digitalWrite(13, HIGH);
-  // digitalWrite(10, HIGH);
   servo.attach(SERVO_PIN);
   
-  curr = -1;
+  curr = -1; // idk
 }
 
 void loop()
 {
+  // === Buttons et al
   now = (millis() + accel) % SCHEDULE_END;
   if (digitalRead(BUTTON_PIN)) {
     Serial.println("button pressed");
@@ -105,10 +86,10 @@ void loop()
   }
   if (curr > 0) curr = getButtonVal(now % 7000);
   if (curr == 0 && getButtonVal(now % 7000) == 3) curr = -1;
-  
-  // Serial.println(now);
+
+  // === Traffic Lights
   for (int i = 0; i < sizeof(updates)/sizeof(upd); i++) {
-    if (prev > now) {
+    if (prev > now) { // handle modulo
       prev = -1;
     }
     if (prev <= updates[i].time && updates[i].time <= now ) {
@@ -126,12 +107,13 @@ void loop()
   Serial.println((servoTime % 360));
   Serial.println(curr);
   
-  delay(1); // to make sure prev < now
+  delay(1);
+  // to make sure prev < now (not prev == now!)
+  // NOTE: above does not handle SCHEDULE_END -> 0
   prev = now;
   
+  // === Streetlight
   int val = analogRead(LDR_PIN);
   if (val > 120) digitalWrite(LED_PIN, HIGH);
   else digitalWrite(LED_PIN, LOW);
-  // Serial.print("ldr ");
-  // Serial.println(val);
 }
