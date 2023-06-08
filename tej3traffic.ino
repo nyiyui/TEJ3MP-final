@@ -2,8 +2,8 @@
 
 #define SERVO_PIN 10
 // TODO: calibrate SERVO_CLOSED and SERVO_OPEN
-#define SERVO_CLOSED 0
-#define SERVO_OPEN 60
+#define SERVO_CLOSED 90
+#define SERVO_OPEN 20
 #define IR_PIN A2
 // TODO: calibrate IR_THRESHOLD
 // assume IR is blocked when IR phototransistor value is less then IR_THRESHOLD
@@ -123,6 +123,8 @@ void handleIR() {
   // 2 - waiting for gate to open (open gate at notepad time)
   // 3 - waiting for gate to close
   int val = analogRead(IR_PIN);
+  Serial.print("IR ");
+  Serial.println(val);
   if (val < IR_THRESHOLD && state == 1) {
     state = 2;
     notepadTime = millis() + 2000; // "after 2 seconds"
@@ -139,7 +141,6 @@ void handleIR() {
     state = 1;
     notepadTime = 0; // hygiene
   }
-  Serial.println(state);
 }
 
 void loop()
