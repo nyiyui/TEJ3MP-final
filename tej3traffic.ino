@@ -1,6 +1,6 @@
 #include <Servo.h>
 
-#define SERVO_PIN 12
+#define SERVO_PIN 10
 #define BUTTON_PIN 13
 #define LED_PIN 11
 #define LDR_PIN A0
@@ -90,7 +90,9 @@ void loop()
   // === Traffic Lights
   for (int i = 0; i < sizeof(updates)/sizeof(upd); i++) {
     if (prev > now) { // handle modulo
-      prev = -1;
+      prev = -1;Serial.println((servoTime % 360));
+  Serial.println(curr);
+
     }
     if (prev <= updates[i].time && updates[i].time <= now ) {
       // Serial.print("pin ");
@@ -104,8 +106,8 @@ void loop()
   
   int adj = (servoTime % 360) >= 180 ? -1 : 1;
   servo.write(((servoTime % 360)/180)*180 + ((servoTime++) % 180) * adj);
-  Serial.println((servoTime % 360));
-  Serial.println(curr);
+  // Serial.println((servoTime % 360));
+  // Serial.println(curr);
   
   delay(1);
   // to make sure prev < now (not prev == now!)
@@ -116,4 +118,5 @@ void loop()
   int val = analogRead(LDR_PIN);
   if (val > 120) digitalWrite(LED_PIN, HIGH);
   else digitalWrite(LED_PIN, LOW);
+  Serial.println(val);
 }
