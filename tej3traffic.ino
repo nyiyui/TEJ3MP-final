@@ -49,14 +49,18 @@ struct callback_request step(bool button_pressed) {
   unsigned long now = millis();
   unsigned long wakeOffset = 2000;
   if (button_pressed) fast = true;
+  if (fast) Serial.println("fast");
+  else Serial.println("normal");
+  state %= 6;
+  // NOTE: fast schedule for pedestrians is per pedestrian and through car lights
   switch (state) {
   case 0:
-    reconcile({ LIGHT_R, LIGHT_G, LIGHT_R });
-    if (fast) wakeOffset = 3000;
-    break;
-  case 1:
     if (fast && !button_pressed)
       fast = false;
+    reconcile({ LIGHT_R, LIGHT_G, LIGHT_R });
+    if (fast) wakeOffset = 1000;
+    break;
+  case 1:
     reconcile({ LIGHT_R, LIGHT_Y, LIGHT_R });
     if (fast) wakeOffset = 1000;
     break;
@@ -65,12 +69,12 @@ struct callback_request step(bool button_pressed) {
     if (fast) wakeOffset = 1000;
     break;
   case 3:
+    if (fast && !button_pressed)
+      fast = false;
     reconcile({ LIGHT_G, LIGHT_R, LIGHT_G });
     if (fast) wakeOffset = 3000;
     break;
   case 4:
-    if (fast && !button_pressed)
-      fast = false;
     reconcile({ LIGHT_Y, LIGHT_R, LIGHT_R });
     if (fast) wakeOffset = 1000;
     break;
@@ -105,17 +109,22 @@ void setup()
 
 void loop()
 {
+  static bool prev_button = false;
+  bool button_pressed = false;
+  bool call = false;
   if (millis() >= callStep) {
-    bool button_pressed = digitalRead(BUTTON_PIN);
+    call = true;
+  }
+  button_pressed = digitalRead(BUTTON_PIN);
+  if (button_pressed && prev_button != button_pressed) {
+    call = true;
+    prev_button = button_pressed;
+  }
+  if (call) {
     struct callback_request cr = step(button_pressed);
     callStep = cr.wakeBy;
     Serial.print("called ");
     Serial.println(callStep);
-  }
-
-  // === Buttons et al
-  if (digitalRead(BUTTON_PIN)) {
-    Serial.println("button pressed");
   }
   
   // === Servo
@@ -131,4 +140,5 @@ void loop()
   if (val > 120) digitalWrite(LED_PIN, HIGH);
   else digitalWrite(LED_PIN, LOW);
 }
+
 
