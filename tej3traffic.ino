@@ -11,6 +11,11 @@ struct upd {
   int time;
 };
 
+// === Traffic Light Pins
+// R Y G
+// 2 3 4 not dead end
+// 5 6 7 dead end
+// 8   9 (pedestrian)
 #define SCHEDULE_END 12000
 struct upd updates[] {
   {false, 5, 0},
@@ -23,19 +28,19 @@ struct upd updates[] {
 
   {false, 6, 4000},
   {true,  5, 4000},
-  {false, 8, 4000}, // people
-  {true,  9, 4000}, // people
 
+  {false, 8, 6000}, // people (add a grace period)
+  {true,  9, 6000}, // people
   {false, 2, 6000},
   {true,  4, 6000},
 
   {false, 4, 8000},
   {true,  3, 8000},
+  {true,  8, 8000}, // people
+  {false, 9, 8000}, // people
 
   {false, 3, 10000},
   {true,  2, 10000},
-  {true,  8, 12000}, // people
-  {false, 9, 12000}, // people
 };
 
 #define interval 100
