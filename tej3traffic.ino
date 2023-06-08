@@ -1,6 +1,13 @@
 #include <Servo.h>
 
 #define SERVO_PIN 10
+// TODO: calibrate SERVO_CLOSED and SERVO_OPEN
+#define SERVO_CLOSED 0
+#define SERVO_OPEN 60
+#define IR_PIN A2
+// TODO: calibrate IR_THRESHOLD
+// assume IR is blocked when IR phototransistor value is less then IR_THRESHOLD
+#define IR_THRESHOLD 128
 #define BUTTON_PIN 13
 #define LED_PIN 11
 #define LDR_PIN A0
@@ -49,8 +56,8 @@ struct callback_request step(bool button_pressed) {
   unsigned long now = millis();
   unsigned long wakeOffset = 2000;
   if (button_pressed) fast = true;
-  if (fast) Serial.println("fast");
-  else Serial.println("normal");
+  // if (fast) Serial.println("fast");
+  // else Serial.println("normal");
   state %= 6;
   // NOTE: fast schedule for pedestrians is per pedestrian and through car lights
   switch (state) {
@@ -90,7 +97,6 @@ struct callback_request step(bool button_pressed) {
 
 Servo servo;
 unsigned long callStep = 0; // call step when millis() >= callStep
-int servoTime = 0;
 
 void setup()
 {
@@ -105,6 +111,35 @@ void setup()
     pinMode(pin, OUTPUT);
   // === Servo
   servo.attach(SERVO_PIN);
+  // === IR
+  pinMode(IR_PIN, INPUT);
+}
+
+void handleIR() {
+  static int state = 1;
+  static unsigned long notepadTime = 0; // random millis() value (meaning dependent on state)
+  // === States
+  // 1 - nothing is happening
+  // 2 - waiting for gate to open (open gate at notepad time)
+  // 3 - waiting for gate to close
+  int val = analogRead(IR_PIN);
+  if (val < IR_THRESHOLD && state == 1) {
+    state = 2;
+    notepadTime = millis() + 2000; // "after 2 seconds"
+  }
+  if (state == 2 && notepadTime < millis()) {
+    Serial.println("open");
+    servo.write(SERVO_OPEN);
+    state = 3;
+    notepadTime = millis() + 1500; // "stays open for 1.5 seconds"
+  }
+  if (state == 3 && notepadTime < millis()) {
+    Serial.println("close");
+    servo.write(SERVO_CLOSED);
+    state = 1;
+    notepadTime = 0; // hygiene
+  }
+  Serial.println(state);
 }
 
 void loop()
@@ -127,13 +162,13 @@ void loop()
     Serial.println(callStep);
   }
   
-  // === Servo
-  int adj = (servoTime % 360) >= 180 ? -1 : 1;
-  servo.write(((servoTime % 360)/180)*180 + ((servoTime++) % 180) * adj);
+  // === IR
+  handleIR();
   
-  // delay(1);
-  // // NOTE: to make sure cyclePrev < cycleNow (not cyclePrev == cycleNow!)
-  // //       (note that above does not handle SCHEDULE_END -> 0)
+  delay(1);
+  // NOTE: to make sure cyclePrev < cycleNow (not cyclePrev == cycleNow!)
+  //       (note that above does not handle SCHEDULE_END -> 0)
+  //       not sure if this is needed but it doesn't do much harm...
   
   // === Streetlight
   int val = analogRead(LDR_PIN);
