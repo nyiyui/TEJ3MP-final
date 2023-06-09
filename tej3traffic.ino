@@ -125,7 +125,7 @@ void handleIR() {
   int val = analogRead(IR_PIN);
   Serial.print("IR ");
   Serial.println(val);
-  if (val < IR_THRESHOLD && state == 1) {
+  if (val > IR_THRESHOLD && state == 1) {
     state = 2;
     notepadTime = millis() + 2000; // "after 2 seconds"
   }
