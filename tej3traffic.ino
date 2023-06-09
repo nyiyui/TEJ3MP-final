@@ -54,13 +54,12 @@ struct callback_request step(bool button_pressed) {
   static bool fast = false; // schedule after button is presed
   unsigned long now = millis();
   unsigned long wakeOffset = 2000;
-  if (button_pressed) fast = true;
+  if (button_pressed) fast = true; // set to fast schedule when button is pressed
   // debug code
   // if (fast) Serial.println("fast");
   // else Serial.println("normal");
   state %= 6;
   // NOTE: fast schedule for pedestrians is per pedestrian and through car lights
-  // explain switch
   switch (state) {
   case 0:
     if (fast && !button_pressed)
@@ -129,8 +128,8 @@ void handleIR() {
   // 3 - waiting for gate to close
   int val = analogRead(IR_PIN);
   // debug print
-  Serial.print("IR ");
-  Serial.println(val);
+  // Serial.print("IR ");
+  // Serial.println(val);
 
   if (val > IR_THRESHOLD && state == 1) {
     state = 2;
