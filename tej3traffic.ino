@@ -1,12 +1,11 @@
 #include <Servo.h>
+// top comments
 
 #define SERVO_PIN 10
-// TODO: calibrate SERVO_CLOSED and SERVO_OPEN
 #define SERVO_CLOSED 90
 #define SERVO_OPEN 20
 #define IR_PIN A2
-// TODO: calibrate IR_THRESHOLD
-// assume IR is blocked when IR phototransistor value is less then IR_THRESHOLD
+// assume IR is blocked when IR phototransistor value is more than IR_THRESHOLD
 #define IR_THRESHOLD 128
 #define BUTTON_PIN 13
 #define LED_PIN 11
@@ -51,21 +50,27 @@ void reconcile(struct situation now) {
 // Handles changes to signal lights.
 // Called when a) program starts OR b) callback_request.wakeBy is in the current or the past OR c) button pressed.
 struct callback_request step(bool button_pressed) {
-  static int state = 0;
+  static int state = 0; // incremented after wakeOffset milliseconds. Valid values are 0 to 5
   static bool fast = false; // schedule after button is presed
   unsigned long now = millis();
   unsigned long wakeOffset = 2000;
   if (button_pressed) fast = true;
+  // debug code
   // if (fast) Serial.println("fast");
   // else Serial.println("normal");
   state %= 6;
   // NOTE: fast schedule for pedestrians is per pedestrian and through car lights
+  // explain switch
   switch (state) {
   case 0:
     if (fast && !button_pressed)
       fast = false;
     reconcile({ LIGHT_R, LIGHT_G, LIGHT_R });
-    if (fast) wakeOffset = 1000;
+    // change lights so:
+    //   through    light is red
+    //   dead end   light is green
+    //   pedestrian light is red
+    if (fast) wakeOffset = 1000; // if fast schedule, switch to next state in 1000ms instead of normal 2000ms
     break;
   case 1:
     reconcile({ LIGHT_R, LIGHT_Y, LIGHT_R });
@@ -91,7 +96,7 @@ struct callback_request step(bool button_pressed) {
     break;
   }
   state ++;
-  struct callback_request ret = { now + wakeOffset };
+  struct callback_request ret = { now + wakeOffset }; // request to call this function wakeOffset ms later
   return ret;
 }
 
@@ -123,8 +128,10 @@ void handleIR() {
   // 2 - waiting for gate to open (open gate at notepad time)
   // 3 - waiting for gate to close
   int val = analogRead(IR_PIN);
+  // debug print
   Serial.print("IR ");
   Serial.println(val);
+
   if (val > IR_THRESHOLD && state == 1) {
     state = 2;
     notepadTime = millis() + 2000; // "after 2 seconds"
@@ -139,7 +146,7 @@ void handleIR() {
     Serial.println("close");
     servo.write(SERVO_CLOSED);
     state = 1;
-    notepadTime = 0; // hygiene
+    notepadTime = 0; // clear time for hygiene
   }
 }
 
@@ -167,7 +174,7 @@ void loop()
   handleIR();
   
   delay(1);
-  // NOTE: to make sure cyclePrev < cycleNow (not cyclePrev == cycleNow!)
+  // NOTE: to make sure millis() diffing calculations are over 0
   //       (note that above does not handle SCHEDULE_END -> 0)
   //       not sure if this is needed but it doesn't do much harm...
   
