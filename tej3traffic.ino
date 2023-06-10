@@ -1,5 +1,8 @@
 #include <Servo.h>
-// top comments
+// Names: Shane, Ken, and Caleb
+// Teacher: Mr. Wong
+// Date: June 9, 2023
+// Purpose: Arduino code of traffic light model
 
 #define SERVO_PIN 10
 #define SERVO_CLOSED 90
@@ -15,9 +18,7 @@ struct callback_request {
   unsigned long wakeBy;
 };
 
-#define flag_high(field, flag) (((field & flag) == flag) ? HI
-85
-    if (fast) wakeOffset = 3000;GH : LOW)
+#define flag_high(field, flag) (((field & flag) == flag) ? HIGH : LOW)
 
 #define LIGHT_R 0x1
 #define LIGHT_Y 0x2
@@ -102,8 +103,7 @@ struct callback_request step(bool button_pressed) {
 Servo servo;
 unsigned long callStep = 0; // call step when millis() >= callStep
 
-void setup()
-{
+void setup() {
   Serial.begin(9600);
   // === Streetlight
   pinMode(LED_PIN, OUTPUT);
@@ -149,16 +149,17 @@ void handleIR() {
   }
 }
 
-void loop()
-{
+void loop() {
   static bool prev_button = false;
   bool button_pressed = false;
   bool call = false;
   if (millis() >= callStep) {
+    // call if time is up
     call = true;
   }
   button_pressed = digitalRead(BUTTON_PIN);
   if (button_pressed && prev_button != button_pressed) {
+    // call if button was pressed or released
     call = true;
     prev_button = button_pressed;
   }
@@ -169,7 +170,6 @@ void loop()
     Serial.println(callStep);
   }
   
-  // === IR
   handleIR();
   
   delay(1);
