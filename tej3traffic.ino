@@ -15,7 +15,9 @@ struct callback_request {
   unsigned long wakeBy;
 };
 
-#define flag_high(field, flag) (((field & flag) == flag) ? HIGH : LOW)
+#define flag_high(field, flag) (((field & flag) == flag) ? HI
+85
+    if (fast) wakeOffset = 3000;GH : LOW)
 
 #define LIGHT_R 0x1
 #define LIGHT_Y 0x2
@@ -50,7 +52,7 @@ void reconcile(struct situation now) {
 // Handles changes to signal lights.
 // Called when a) program starts OR b) callback_request.wakeBy is in the current or the past OR c) button pressed.
 struct callback_request step(bool button_pressed) {
-  static int state = 0; // incremented after wakeOffset milliseconds. Valid values are 0 to 5
+  static int state = 0; // incremented after wakeOffset milliseconds
   static bool fast = false; // schedule after button is presed
   unsigned long now = millis();
   unsigned long wakeOffset = 2000;
@@ -59,11 +61,8 @@ struct callback_request step(bool button_pressed) {
   // if (fast) Serial.println("fast");
   // else Serial.println("normal");
   state %= 6;
-  // NOTE: fast schedule for pedestrians is per pedestrian and through car lights
   switch (state) {
   case 0:
-    if (fast && !button_pressed)
-      fast = false;
     reconcile({ LIGHT_R, LIGHT_G, LIGHT_R });
     // change lights so:
     //   through    light is red
@@ -80,10 +79,11 @@ struct callback_request step(bool button_pressed) {
     if (fast) wakeOffset = 1000;
     break;
   case 3:
-    if (fast && !button_pressed)
+    if (fast && !button_pressed) {
       fast = false;
+      wakeOffset = 3000;
+    }
     reconcile({ LIGHT_G, LIGHT_R, LIGHT_G });
-    if (fast) wakeOffset = 3000;
     break;
   case 4:
     reconcile({ LIGHT_Y, LIGHT_R, LIGHT_R });
