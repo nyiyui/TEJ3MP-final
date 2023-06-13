@@ -57,11 +57,26 @@ struct callback_request step(bool button_pressed) {
   static bool fast = false; // schedule after button is presed
   unsigned long now = millis();
   unsigned long wakeOffset = 2000;
-  if (button_pressed) fast = true; // set to fast schedule when button is pressed
-  // debug code
-  // if (fast) Serial.println("fast");
-  // else Serial.println("normal");
   state %= 6;
+  Serial.print("button: state ");
+  Serial.print(state);
+  if (fast) Serial.println(" fast");
+  else Serial.println(" normal");
+  if (button_pressed && !fast) {
+    fast = true; // set to fast schedule when button is pressed
+    Serial.println("button: fast start");
+  } else if (button_pressed) {
+    Serial.println("button: fast cont");
+  }
+  // NOTE: LEDs here are in the perspective of the pedestrians.
+  //   If the button is pressed when Red LED is on, it speeds up the change for red and yellow LEDs
+  //   (50% less time for red, yellow LEDs to stay on), and green LED can stay longer (+50%).
+  //   ii. If the button is pressed when Yellow LED is on, it speeds up the change for yellow LED (50%
+  //   less time needed for yellow LEDs to stay on), and green LED can stay longer (+50%) once.
+  //   iii. If the button is pressed when green LED is on, there should be no change for the current
+  //   timing of green LED, but this still speeds up the change for the next cycle (see part (i)) once.
+  //   iv. The change to the timing of LEDs is done ONCE only, e.g. in part(i) the LEDs will be back to
+  //   normal after green LED stays longer
   switch (state) {
   case 0:
     reconcile({ LIGHT_R, LIGHT_G, LIGHT_R });
@@ -83,16 +98,15 @@ struct callback_request step(bool button_pressed) {
     if (fast && !button_pressed) {
       fast = false;
       wakeOffset = 3000;
+      Serial.println("button: fast end");
     }
     reconcile({ LIGHT_G, LIGHT_R, LIGHT_G });
     break;
   case 4:
     reconcile({ LIGHT_Y, LIGHT_R, LIGHT_R });
-    if (fast) wakeOffset = 1000;
     break;
   case 5:
     reconcile({ LIGHT_R, LIGHT_R, LIGHT_R });
-    if (fast) wakeOffset = 1000;
     break;
   }
   state ++;
@@ -161,13 +175,14 @@ void loop() {
   if (button_pressed && prev_button != button_pressed) {
     // call if button was pressed or released
     call = true;
-    prev_button = button_pressed;
+    Serial.println("new button_pressed");
   }
+  prev_button = button_pressed;
   if (call) {
     struct callback_request cr = step(button_pressed);
     callStep = cr.wakeBy;
-    Serial.print("called ");
-    Serial.println(callStep);
+    // Serial.print("called ");
+    // Serial.println(callStep);
   }
   
   handleIR();
